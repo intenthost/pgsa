@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#09090b"/>
+  <!-- Subtle grid -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.06"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <!-- DB icon -->
+  <g transform="translate(488, 180)">
+    <rect width="224" height="224" rx="40" fill="#18181b"/>
+    <ellipse cx="112" cy="72" rx="56" ry="22" stroke="#ffffff" stroke-width="10"/>
+    <path d="M56 112c0 12.15 25.07 22 56 22s56-9.85 56-22" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+    <path d="M56 72v88c0 12.15 25.07 22 56 22s56-9.85 56-22V72" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- PGSA wordmark -->
+  <text x="600" y="456" font-family="system-ui, -apple-system, sans-serif" font-size="80" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="-2">PGSA</text>
+  <text x="600" y="510" font-family="system-ui, -apple-system, sans-serif" font-size="26" fill="#71717a" text-anchor="middle" letter-spacing="1">PostgreSQL Administration Studio</text>
+</svg>

@@ -1,0 +1,37 @@
+# Dependencies and build outputs
+node_modules
+.next
+out
+build
+coverage
+.vercel
+
+# Version control and local environment
+.git
+.gitignore
+.github
+.env*
+.impeccable
+deploy.py
+LICENSE
+README.md
+SECURITY.md
+
+# Docker files
+Dockerfile
+.dockerignore
+compose.yaml
+docker-compose*.yml
+docker-compose*.yaml
+
+# Logs and TypeScript incremental cache
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+
+# OS artifacts and certificates
+.DS_Store
+*.pem

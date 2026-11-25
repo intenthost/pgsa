@@ -1,0 +1,12 @@
+services:
+  pgsa:
+    image: pgsa:local
+    build: .
+    container_name: pgsa
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

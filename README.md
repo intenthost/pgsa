@@ -9,7 +9,6 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22C55E?style=flat-square)](./LICENSE)
-[![CI](https://img.shields.io/github/actions/workflow/status/intenthost/pgsa/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/intenthost/pgsa/actions)
 
 </div>
 

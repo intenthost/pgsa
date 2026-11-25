@@ -395,13 +395,14 @@ export function PgsaWorkbench({
         if (
           res.ok &&
           res.totalRows !== undefined &&
-          !nextParams.search.trim()
+          !nextParams.search.trim() &&
+          !nextParams.sort &&
+          nextParams.page === 1
         ) {
           const tableKey = `${nextParams.schema}.${nextParams.table}`;
-          const exactCount = res.totalRows;
           setRowEstimateOverrides((prev) => ({
             ...prev,
-            [tableKey]: exactCount,
+            [tableKey]: res.totalRows!,
           }));
         }
 
@@ -459,6 +460,8 @@ export function PgsaWorkbench({
           browseParams.schema &&
           browseParams.table &&
           !browseParams.search.trim() &&
+          !browseParams.sort &&
+          browseParams.page === 1 &&
           next.totalRows !== undefined &&
           next.totalRows !== prev.totalRows
         ) {

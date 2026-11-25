@@ -12,7 +12,7 @@ Please do not disclose security vulnerabilities in public GitHub issues.
 
 Report vulnerabilities privately via:
 
-- Email: `git@subhmondal.com`
+- Email: `subh@intenthost.com`
 - GitHub Security Advisories on `https://github.com/intenthost/pgsa`
 
 Include reproduction steps, affected files or endpoints, and potential impact. You will receive an acknowledgment and remediation timeline as soon as possible.

@@ -100,4 +100,4 @@ node .next/standalone/server.js
 
 ## 📄 License
 
-MIT © 2026 [Subh Mondal](https://github.com/subhmondal) — see [LICENSE](./LICENSE)
+MIT © 2026 [Intent Host](https://github.com/intenthost) — see [LICENSE](./LICENSE)

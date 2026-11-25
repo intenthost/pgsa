@@ -4,7 +4,7 @@
   "private": true,
   "description": "Ultra-lean PostgreSQL administration studio built with Next.js 16, React 19, Tailwind CSS v4, CodeMirror 6, and shadcn/ui.",
   "license": "MIT",
-  "author": "Subh Mondal",
+  "author": "Intent Host",
   "repository": {
     "type": "git",
     "url": "https://github.com/intenthost/pgsa.git"

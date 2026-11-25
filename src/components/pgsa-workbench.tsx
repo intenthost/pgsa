@@ -808,14 +808,14 @@ export function PgsaWorkbench({
                   <motion.aside
                     key="tables-rail"
                     initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 224, opacity: 1 }}
+                    animate={{ width: 272, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
                     className="h-full shrink-0 overflow-hidden border-r border-border bg-[#fafafa]"
                   >
-                    <div className="flex h-full w-56 flex-col">
-                      <div className="border-b border-border p-2">
-                        <InputGroup className="h-7 bg-background">
+                    <div className="flex h-full w-[272px] flex-col">
+                      <div className="border-b border-border p-2.5">
+                        <InputGroup className="h-8 bg-background">
                           <InputGroupAddon>
                             <HugeiconsIcon icon={Search01Icon} />
                           </InputGroupAddon>
@@ -874,7 +874,7 @@ export function PgsaWorkbench({
                                       }
                                       title={fullName}
                                       className={cn(
-                                        "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors",
+                                        "group flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors",
                                         isActive
                                           ? "bg-zinc-200/75 font-medium text-foreground"
                                           : "text-zinc-600 hover:bg-zinc-200/45 hover:text-foreground"
@@ -884,7 +884,7 @@ export function PgsaWorkbench({
                                 >
                                   <HugeiconsIcon
                                     icon={GridTableIcon}
-                                    size={14}
+                                    size={15}
                                     className={cn(
                                       "shrink-0",
                                       isActive
@@ -897,7 +897,7 @@ export function PgsaWorkbench({
                                       ? table.name
                                       : fullName}
                                   </span>
-                                  <span className="shrink-0 text-[11px] text-zinc-600 tabular-nums">
+                                  <span className="shrink-0 text-xs text-zinc-600 tabular-nums">
                                     {table.rowEstimate.toLocaleString()}
                                   </span>
                                 </ContextMenuTrigger>
@@ -975,7 +975,7 @@ export function PgsaWorkbench({
                         )}
                       </div>
 
-                      <div className="flex h-9 shrink-0 items-center justify-between border-t border-border px-3 text-[11px] text-zinc-600 tabular-nums">
+                      <div className="flex h-10 shrink-0 items-center justify-between border-t border-border px-3 text-xs text-zinc-600 tabular-nums">
                         <span>
                           {catalog.length}{" "}
                           {catalog.length === 1 ? "table" : "tables"}

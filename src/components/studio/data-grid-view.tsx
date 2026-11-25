@@ -1714,9 +1714,9 @@ export function DataGridView({
   const headerTitle =
     targetTableName ?? (result?.command ? `${result.command} Result` : "Data Grid");
 
-  const rowHeightClass = density === "dense" ? "h-8" : "h-9";
+  const rowHeightClass = density === "dense" ? "h-9" : "h-11";
   const cellPadClass =
-    density === "dense" ? "px-2 py-1 text-xs" : "px-2.5 py-1.5 text-[13px]";
+    density === "dense" ? "px-2.5 py-1.5 text-[13px]" : "px-3 py-2 text-sm";
 
   const hiddenCount = Object.keys(hiddenColumns).length;
 
@@ -1787,21 +1787,21 @@ export function DataGridView({
     <TooltipProvider delay={200}>
       <div className="flex h-full min-h-0 flex-1 flex-col bg-white text-zinc-900">
         {/* Flush Toolbar */}
-        <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3">
+        <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3.5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex min-w-0 items-center gap-1.5">
+            <div className="flex min-w-0 items-center gap-2">
               <HugeiconsIcon
                 icon={GridTableIcon}
-                className="size-3.5 shrink-0 text-zinc-500"
+                className="size-4 shrink-0 text-zinc-500"
                 strokeWidth={1.8}
               />
-              <span className="truncate text-[13px] font-medium tracking-tight text-zinc-900">
+              <span className="truncate text-sm font-medium tracking-tight text-zinc-900">
                 {headerTitle}
               </span>
             </div>
 
             {result && (
-              <span className="shrink-0 text-xs text-zinc-600 tabular-nums">
+              <span className="shrink-0 text-[13px] text-zinc-600 tabular-nums">
                 {result.ok ? (
                   <>
                     {!isServerPaginated && clientRowFilter.trim()
@@ -1825,7 +1825,7 @@ export function DataGridView({
               />
             )}
 
-            <InputGroup className="h-7 w-48">
+            <InputGroup className="h-8 w-56">
               <InputGroupAddon align="inline-start">
                 <HugeiconsIcon icon={Search01Icon} className="size-3.5" />
               </InputGroupAddon>
@@ -1843,7 +1843,7 @@ export function DataGridView({
                 }}
                 placeholder="Filter..."
                 aria-label="Filter grid rows"
-                className="h-7 text-xs"
+                className="h-8 text-[13px]"
               />
               {searchInputValue && (
                 <InputGroupAddon align="inline-end">
@@ -2140,11 +2140,11 @@ export function DataGridView({
             </div>
           ) : visibleColumns.length > 0 ? (
             <table className="w-full border-separate border-spacing-0 text-left font-sans">
-              <thead className="sticky top-0 z-20 bg-zinc-50 text-xs">
-                <tr className="h-8">
+              <thead className="sticky top-0 z-20 bg-zinc-50 text-[13px]">
+                <tr className="h-10">
                   <th
                     scope="col"
-                    className="sticky left-0 z-30 h-8 w-9 min-w-9 border-r border-b border-zinc-200 bg-zinc-50 px-2 text-center select-none"
+                    className="sticky left-0 z-30 h-10 w-10 min-w-10 border-r border-b border-zinc-200 bg-zinc-50 px-2.5 text-center select-none"
                   >
                     <div
                       className="flex items-center justify-center"
@@ -2164,7 +2164,7 @@ export function DataGridView({
                   </th>
                   <th
                     scope="col"
-                    className="sticky left-9 z-30 h-8 w-11 min-w-11 border-r border-b border-zinc-200 bg-zinc-50 px-2 text-right font-mono text-[11px] font-medium text-zinc-500 tabular-nums select-none"
+                    className="sticky left-10 z-30 h-10 w-12 min-w-12 border-r border-b border-zinc-200 bg-zinc-50 px-2.5 text-right font-mono text-xs font-medium text-zinc-500 tabular-nums select-none"
                   >
                     #
                   </th>
@@ -2176,26 +2176,26 @@ export function DataGridView({
                       <th
                         key={col.name}
                         scope="col"
-                        className="h-8 border-r border-b border-zinc-200 bg-zinc-50 px-2.5 font-medium whitespace-nowrap text-zinc-900 select-none last:border-r-0"
+                        className="h-10 border-r border-b border-zinc-200 bg-zinc-50 px-3 font-medium whitespace-nowrap text-zinc-900 select-none last:border-r-0"
                       >
                         <button
                           type="button"
                           onClick={() => handleToggleColumnSort(col.name)}
                           title={`Sort by ${col.name}`}
-                          className="group flex w-full items-center justify-between gap-2 text-left text-xs outline-none focus-visible:text-zinc-950"
+                          className="group flex w-full items-center justify-between gap-2 text-left text-[13px] outline-none focus-visible:text-zinc-950"
                         >
                           <span className="flex items-center gap-1.5">
                             {isPk && (
                               <HugeiconsIcon
                                 icon={Key01Icon}
-                                className="size-3 shrink-0 text-amber-600"
+                                className="size-3.5 shrink-0 text-amber-600"
                                 strokeWidth={2}
                               />
                             )}
                             <span className="font-medium text-zinc-900">
                               {col.name}
                             </span>
-                            <span className="font-mono text-[11px] font-normal text-zinc-500">
+                            <span className="font-mono text-xs font-normal text-zinc-500">
                               {col.dataType}
                             </span>
                           </span>
@@ -2281,7 +2281,7 @@ export function DataGridView({
                         >
                           <td
                             className={cn(
-                              "sticky left-0 z-10 w-9 min-w-9 border-r border-b border-zinc-100 px-2 text-center select-none",
+                              "sticky left-0 z-10 w-10 min-w-10 border-r border-b border-zinc-100 px-2.5 text-center select-none",
                               rowHeightClass,
                               isRowSelected
                                 ? "bg-zinc-50"
@@ -2311,7 +2311,7 @@ export function DataGridView({
 
                           <td
                             className={cn(
-                              "sticky left-9 z-10 w-11 min-w-11 border-r border-b border-zinc-100 bg-zinc-50/70 px-2 text-right font-mono text-[11px] text-zinc-500 tabular-nums select-none",
+                              "sticky left-10 z-10 w-12 min-w-12 border-r border-b border-zinc-100 bg-zinc-50/70 px-2.5 text-right font-mono text-xs text-zinc-500 tabular-nums select-none",
                               rowHeightClass
                             )}
                           >
@@ -2447,10 +2447,10 @@ export function DataGridView({
                                         }
                                       }}
                                       className={cn(
-                                        "h-6 min-w-[100px] flex-1 rounded bg-white px-1.5 text-zinc-900 outline-none",
+                                        "h-7 min-w-[100px] flex-1 rounded bg-white px-2 text-zinc-900 outline-none",
                                         isUuid
-                                          ? "font-mono text-xs"
-                                          : "font-sans text-[13px]",
+                                          ? "font-mono text-[13px]"
+                                          : "font-sans text-sm",
                                         editingCell.isNull &&
                                           "italic placeholder:text-zinc-500"
                                       )}
@@ -2722,7 +2722,7 @@ export function DataGridView({
         </div>
 
         {/* Flush Footer */}
-        <div className="flex h-9 shrink-0 items-center justify-between gap-2 border-t border-zinc-200 bg-white px-3 text-xs text-zinc-600">
+        <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-t border-zinc-200 bg-white px-3.5 text-[13px] text-zinc-600">
           <div className="flex items-center gap-2 tabular-nums">
             <span>
               Showing {showingFrom}–{showingTo} of{" "}

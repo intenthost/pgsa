@@ -600,6 +600,67 @@ async function resolveFieldMetadata(
   };
 }
 
+const EXACT_COUNT_MAX_ESTIMATE = 250_000;
+const EXACT_COUNT_CONCURRENCY = 6;
+
+interface CountCandidate {
+  schema: string;
+  name: string;
+  estimate: number;
+  isView: boolean;
+}
+
+/**
+ * Compute exact row counts for base tables within a safe size threshold so
+ * sidebar and visualizer totals reflect real database state immediately on
+ * connect rather than stale planner estimates.
+ */
+async function resolveExactTableCounts(
+  pool: Pool,
+  entries: CountCandidate[]
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const targets: CountCandidate[] = [];
+
+  for (const entry of entries) {
+    const key = `${entry.schema}.${entry.name}`;
+    counts.set(key, entry.estimate);
+    if (!entry.isView && entry.estimate <= EXACT_COUNT_MAX_ESTIMATE) {
+      targets.push(entry);
+    }
+  }
+
+  if (targets.length === 0) return counts;
+
+  let cursor = 0;
+  const workerCount = Math.min(EXACT_COUNT_CONCURRENCY, targets.length);
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      while (cursor < targets.length) {
+        const current = targets[cursor];
+        cursor += 1;
+        if (!current) break;
+
+        const key = `${current.schema}.${current.name}`;
+        try {
+          const qualified = `${escapeIdentifier(current.schema)}.${escapeIdentifier(current.name)}`;
+          const res = await pool.query<{ cnt: string }>(
+            `SELECT COUNT(*)::bigint AS cnt FROM ${qualified}`
+          );
+          const parsed = Number(res.rows[0]?.cnt);
+          if (Number.isFinite(parsed) && parsed >= 0) {
+            counts.set(key, parsed);
+          }
+        } catch {
+          // Keep planner estimate if table is unreadable or times out.
+        }
+      }
+    })
+  );
+
+  return counts;
+}
+
 export async function fetchSchemaCatalog(): Promise<{
   ok: boolean;
   tables: TableSchema[];
@@ -620,11 +681,13 @@ export async function fetchSchemaCatalog(): Promise<{
       pool.query<{
         schema_name: string;
         table_name: string;
+        table_type: string;
         row_estimate: string;
       }>(`
         SELECT
           t.table_schema AS schema_name,
           t.table_name AS table_name,
+          t.table_type AS table_type,
           CASE
             WHEN c.oid IS NULL THEN 0
             ELSE GREATEST(
@@ -712,12 +775,22 @@ export async function fetchSchemaCatalog(): Promise<{
       pkByTable.set(key, list);
     }
 
+    const exactCounts = await resolveExactTableCounts(
+      pool,
+      tablesRes.rows.map((tbl) => ({
+        schema: tbl.schema_name,
+        name: tbl.table_name,
+        estimate: Number(tbl.row_estimate) || 0,
+        isView: tbl.table_type === "VIEW",
+      }))
+    );
+
     const tables: TableSchema[] = tablesRes.rows.map((tbl) => {
       const key = `${tbl.schema_name}.${tbl.table_name}`;
       return {
         schema: tbl.schema_name,
         name: tbl.table_name,
-        rowEstimate: Number(tbl.row_estimate) || 0,
+        rowEstimate: exactCounts.get(key) ?? (Number(tbl.row_estimate) || 0),
         primaryKeyColumns: pkByTable.get(key) ?? [],
         columns: columnsByTable.get(key) ?? [],
       };
@@ -767,11 +840,13 @@ export async function fetchSchemaGraph(): Promise<SchemaGraphResult> {
       pool.query<{
         schema_name: string;
         table_name: string;
+        relkind: string;
         row_estimate: string;
       }>(`
         SELECT
           n.nspname AS schema_name,
           c.relname AS table_name,
+          c.relkind::text AS relkind,
           GREATEST(
             COALESCE(c.reltuples, 0)::bigint,
             COALESCE(pg_stat_get_live_tuples(c.oid), 0),
@@ -951,12 +1026,22 @@ export async function fetchSchemaGraph(): Promise<SchemaGraphResult> {
       colsByTable.set(fqn, list);
     }
 
+    const exactCounts = await resolveExactTableCounts(
+      pool,
+      tablesRes.rows.map((tbl) => ({
+        schema: tbl.schema_name,
+        name: tbl.table_name,
+        estimate: Number(tbl.row_estimate) || 0,
+        isView: tbl.relkind === "v",
+      }))
+    );
+
     const tables: TableNode[] = tablesRes.rows.map((tbl) => {
       const fqn = `${tbl.schema_name}.${tbl.table_name}`;
       return {
         schema: tbl.schema_name,
         name: tbl.table_name,
-        rowEstimate: Number(tbl.row_estimate) || 0,
+        rowEstimate: exactCounts.get(fqn) ?? (Number(tbl.row_estimate) || 0),
         primaryKeyColumns: pkMap.get(fqn) ?? [],
         columns: colsByTable.get(fqn) ?? [],
       };

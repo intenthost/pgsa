@@ -241,20 +241,9 @@ export function PgsaWorkbench({
   const [isCommandOpen, setIsCommandOpen] = useState<boolean>(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState<boolean>(false);
 
-  const [rowEstimateOverrides, setRowEstimateOverrides] = useState<
-    Record<string, number>
-  >({});
-
   const catalog = useMemo<TableSchema[]>(
-    () =>
-      schemaCatalog.map((table) => {
-        const key = `${table.schema}.${table.name}`;
-        const override = rowEstimateOverrides[key];
-        return override !== undefined
-          ? { ...table, rowEstimate: override }
-          : table;
-      }),
-    [schemaCatalog, rowEstimateOverrides]
+    () => schemaCatalog,
+    [schemaCatalog]
   );
 
   const [browseParams, setBrowseParams] = useState<BrowseParams>(() => ({
@@ -392,20 +381,6 @@ export function PgsaWorkbench({
 
         setTableResult(res);
 
-        if (
-          res.ok &&
-          res.totalRows !== undefined &&
-          !nextParams.search.trim() &&
-          !nextParams.sort &&
-          nextParams.page === 1
-        ) {
-          const tableKey = `${nextParams.schema}.${nextParams.table}`;
-          setRowEstimateOverrides((prev) => ({
-            ...prev,
-            [tableKey]: res.totalRows!,
-          }));
-        }
-
         if (!res.ok) {
           toast.error(`Failed to browse ${nextParams.schema}.${nextParams.table}`, {
             description: res.error ?? "Database query failed.",
@@ -454,28 +429,9 @@ export function PgsaWorkbench({
 
   const handleResultUpdated = useCallback(
     (updater: (prev: QueryExecutionResult) => QueryExecutionResult) => {
-      setTableResult((prev) => {
-        const next = updater(prev);
-        if (
-          browseParams.schema &&
-          browseParams.table &&
-          !browseParams.search.trim() &&
-          !browseParams.sort &&
-          browseParams.page === 1 &&
-          next.totalRows !== undefined &&
-          next.totalRows !== prev.totalRows
-        ) {
-          const tableKey = `${browseParams.schema}.${browseParams.table}`;
-          const nextTotal = next.totalRows;
-          setRowEstimateOverrides((overrides) => ({
-            ...overrides,
-            [tableKey]: nextTotal,
-          }));
-        }
-        return next;
-      });
+      setTableResult((prev) => updater(prev));
     },
-    [browseParams.schema, browseParams.search, browseParams.table]
+    []
   );
 
   const handleOpenSqlTab = useCallback(

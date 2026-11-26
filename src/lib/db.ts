@@ -1440,7 +1440,8 @@ export async function browseTableRows(input: {
       typeof input.pageSize === "number" && Number.isFinite(input.pageSize)
         ? Math.trunc(input.pageSize)
         : 50;
-    const pageSize = Math.min(200, Math.max(1, rawPageSize));
+    const showAll = rawPageSize === 0;
+    const pageSize = showAll ? 0 : Math.min(1000, Math.max(1, rawPageSize));
     const rawPage =
       typeof input.page === "number" && Number.isFinite(input.page)
         ? Math.trunc(input.page)
@@ -1462,9 +1463,22 @@ export async function browseTableRows(input: {
     }
 
     let orderClause = "";
+    let reverseRowsInMemory = false;
     const requestedSort =
       typeof input.sortColumn === "string" ? input.sortColumn.trim() : "";
-    if (requestedSort && colSet.has(requestedSort)) {
+    if (requestedSort === "__pgsa_hash__" && !colSet.has("__pgsa_hash__")) {
+      const dir =
+        input.sortDirection?.toLowerCase() === "desc" ? "DESC" : "ASC";
+      if (primaryKeyColumns.length > 0) {
+        orderClause = ` ORDER BY ${primaryKeyColumns
+          .map((pk) => `${escapeIdentifier(pk)} ${dir}`)
+          .join(", ")}`;
+      } else if (tableMeta.relkind === "r" || tableMeta.relkind === "p") {
+        orderClause = ` ORDER BY ctid ${dir}`;
+      } else if (dir === "DESC") {
+        reverseRowsInMemory = true;
+      }
+    } else if (requestedSort && colSet.has(requestedSort)) {
       const dir =
         input.sortDirection?.toLowerCase() === "desc" ? "DESC" : "ASC";
       const nulls = dir === "DESC" ? " NULLS LAST" : "";
@@ -1490,15 +1504,18 @@ export async function browseTableRows(input: {
     );
 
     const totalRows = Number(countRes.rows[0]?.total ?? 0);
-    const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-    const page = Math.min(requestedPage, totalPages);
-    const offset = (page - 1) * pageSize;
+    const totalPages = showAll
+      ? 1
+      : Math.max(1, Math.ceil(totalRows / pageSize));
+    const page = showAll ? 1 : Math.min(requestedPage, totalPages);
+    const offset = showAll ? 0 : (page - 1) * pageSize;
+    const effectiveLimit = showAll ? 50_000 : pageSize;
 
     const limitParamIdx = baseParams.length + 1;
     const offsetParamIdx = baseParams.length + 2;
     const dataRes = await pool.query<Record<string, unknown>>(
       `SELECT * FROM ${qualifiedTable}${whereClause}${orderClause} LIMIT $${limitParamIdx} OFFSET $${offsetParamIdx}`,
-      [...baseParams, pageSize, offset]
+      [...baseParams, effectiveLimit, offset]
     );
 
     const durationMs = Math.max(
@@ -1506,7 +1523,10 @@ export async function browseTableRows(input: {
       Math.round((performance.now() - startedAt) * 100) / 100
     );
 
-    const rows = dataRes.rows.map((row) => normalizeRow(row, dataRes.fields));
+    const normalized = dataRes.rows.map((row) =>
+      normalizeRow(row, dataRes.fields)
+    );
+    const rows = reverseRowsInMemory ? normalized.reverse() : normalized;
     const editable =
       (tableMeta.relkind === "r" || tableMeta.relkind === "p") &&
       primaryKeyColumns.length > 0;

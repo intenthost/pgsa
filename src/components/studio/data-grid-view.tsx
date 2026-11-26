@@ -215,12 +215,14 @@ interface DeleteTarget {
 
 type GridDensity = "default" | "dense";
 
+const HASH_SORT_KEY = "__pgsa_hash__";
+
 const PAGE_SIZE_ITEMS = [
   { label: "10", value: "10" },
   { label: "25", value: "25" },
   { label: "50", value: "50" },
   { label: "100", value: "100" },
-  { label: "200", value: "200" },
+  { label: "All", value: "0" },
 ] as const;
 
 const BOOLEAN_SELECT_ITEMS = [
@@ -883,6 +885,11 @@ export function DataGridView({
 
   const sortedRows = useMemo(() => {
     if (isServerPaginated || !sortState) return filteredRows;
+    if (sortState.column === HASH_SORT_KEY) {
+      return sortState.direction === "desc"
+        ? [...filteredRows].reverse()
+        : filteredRows;
+    }
     return [...filteredRows].sort((leftRow, rightRow) =>
       compareCellValues(
         leftRow[sortState.column] ?? null,
@@ -892,23 +899,31 @@ export function DataGridView({
     );
   }, [filteredRows, isServerPaginated, sortState]);
 
+  const showAllRows = effectivePageSize === 0;
   const totalRowsCount = serverPagination
     ? serverPagination.totalRows
     : sortedRows.length;
-  const totalPages = Math.max(
-    1,
-    Math.ceil(totalRowsCount / effectivePageSize)
-  );
-  const safePage = Math.min(Math.max(1, currentPage), totalPages);
-  const pageStartIndex = (safePage - 1) * effectivePageSize;
+  const totalPages = showAllRows
+    ? 1
+    : Math.max(1, Math.ceil(totalRowsCount / effectivePageSize));
+  const safePage = showAllRows
+    ? 1
+    : Math.min(Math.max(1, currentPage), totalPages);
+  const pageStartIndex = showAllRows ? 0 : (safePage - 1) * effectivePageSize;
 
   const paginatedRows = useMemo(() => {
-    if (isServerPaginated) return sortedRows;
+    if (isServerPaginated || showAllRows) return sortedRows;
     return sortedRows.slice(
       pageStartIndex,
       pageStartIndex + effectivePageSize
     );
-  }, [effectivePageSize, isServerPaginated, pageStartIndex, sortedRows]);
+  }, [
+    effectivePageSize,
+    isServerPaginated,
+    pageStartIndex,
+    showAllRows,
+    sortedRows,
+  ]);
 
   const showingFrom =
     totalRowsCount === 0 || paginatedRows.length === 0
@@ -1386,6 +1401,24 @@ export function DataGridView({
     ]
   );
 
+  const handleToggleHashOrder = useCallback(() => {
+    const computeNext = (prev: SortState | null): SortState | null => {
+      if (prev?.column === HASH_SORT_KEY && prev.direction === "desc") {
+        return null;
+      }
+      return { column: HASH_SORT_KEY, direction: "desc" };
+    };
+
+    if (serverPagination) {
+      serverPagination.onSortChange(computeNext(serverPagination.sort));
+    } else {
+      setClientSortState(computeNext);
+      setCurrentPage(1);
+    }
+    setFocusedCell(null);
+    setEditingCell(null);
+  }, [serverPagination, setClientSortState, setCurrentPage]);
+
   const handleToggleColumnSort = useCallback(
     (columnName: string) => {
       const computeNext = (prev: SortState | null): SortState | null => {
@@ -1738,7 +1771,11 @@ export function DataGridView({
       return [...PAGE_SIZE_ITEMS];
     }
     return [...PAGE_SIZE_ITEMS, { label: valStr, value: valStr }].sort(
-      (a, b) => Number(a.value) - Number(b.value)
+      (a, b) => {
+        if (a.value === "0") return 1;
+        if (b.value === "0") return -1;
+        return Number(a.value) - Number(b.value);
+      }
     );
   }, [effectivePageSize]);
 
@@ -2164,9 +2201,36 @@ export function DataGridView({
                   </th>
                   <th
                     scope="col"
-                    className="sticky left-10 z-30 h-10 w-12 min-w-12 border-r border-b border-zinc-200 bg-zinc-50 px-2.5 text-right font-mono text-xs font-medium text-zinc-500 tabular-nums select-none"
+                    className="sticky left-10 z-30 h-10 w-14 min-w-14 border-r border-b border-zinc-200 bg-zinc-50 px-2 text-right font-mono text-xs font-medium text-zinc-500 tabular-nums select-none"
                   >
-                    #
+                    <button
+                      type="button"
+                      onClick={handleToggleHashOrder}
+                      title={
+                        sortState?.column === HASH_SORT_KEY &&
+                        sortState.direction === "desc"
+                          ? "Latest on top (click for 1 on top)"
+                          : "1 on top (click for latest on top)"
+                      }
+                      className="group flex w-full items-center justify-end gap-1 text-right outline-none hover:text-zinc-900 focus-visible:text-zinc-950"
+                    >
+                      <span>#</span>
+                      <HugeiconsIcon
+                        icon={
+                          sortState?.column === HASH_SORT_KEY &&
+                          sortState.direction === "desc"
+                            ? ArrowDown01Icon
+                            : ArrowUp01Icon
+                        }
+                        className={cn(
+                          "size-3 shrink-0 transition-opacity",
+                          sortState?.column === HASH_SORT_KEY &&
+                            sortState.direction === "desc"
+                            ? "text-zinc-900 opacity-100"
+                            : "text-zinc-400 opacity-60 group-hover:opacity-100"
+                        )}
+                      />
+                    </button>
                   </th>
                   {visibleColumns.map((col) => {
                     const isSorted = sortState?.column === col.name;
@@ -2239,7 +2303,12 @@ export function DataGridView({
                   </tr>
                 ) : (
                   paginatedRows.map((row, rowIndex) => {
-                    const globalRowNum = pageStartIndex + rowIndex + 1;
+                    const isHashDesc =
+                      sortState?.column === HASH_SORT_KEY &&
+                      sortState.direction === "desc";
+                    const globalRowNum = isHashDesc
+                      ? Math.max(1, totalRowsCount - pageStartIndex - rowIndex)
+                      : pageStartIndex + rowIndex + 1;
                     const rowKey = rowKeyByRow.get(row);
                     const isRowSelected = Boolean(
                       rowKey && selectedKeySet.has(rowKey)
@@ -2311,7 +2380,7 @@ export function DataGridView({
 
                           <td
                             className={cn(
-                              "sticky left-10 z-10 w-12 min-w-12 border-r border-b border-zinc-100 bg-zinc-50/70 px-2.5 text-right font-mono text-xs text-zinc-500 tabular-nums select-none",
+                              "sticky left-10 z-10 w-14 min-w-14 border-r border-b border-zinc-100 bg-zinc-50/70 px-2.5 text-right font-mono text-xs text-zinc-500 tabular-nums select-none",
                               rowHeightClass
                             )}
                           >

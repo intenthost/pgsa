@@ -402,7 +402,7 @@ export function PgsaWorkbench({
         schema,
         table,
         page: 1,
-        pageSize: browseParams.pageSize || DEFAULT_PAGE_SIZE,
+        pageSize: browseParams.pageSize ?? DEFAULT_PAGE_SIZE,
         sort: null,
         search: "",
       };

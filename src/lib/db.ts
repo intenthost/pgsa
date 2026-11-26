@@ -677,7 +677,7 @@ export async function fetchSchemaCatalog(): Promise<{
 
   try {
     const pool = getPool();
-    const [tablesRes, columnsRes, pkRes] = await Promise.all([
+    const [tablesRes, columnsRes, pkRes, fkRes] = await Promise.all([
       pool.query<{
         schema_name: string;
         table_name: string;
@@ -751,6 +751,28 @@ export async function fetchSchemaCatalog(): Promise<{
           AND n.nspname NOT LIKE 'pg_toast%'
         ORDER BY n.nspname, c.relname, k.ord ASC
       `),
+      pool.query<{
+        source_schema: string;
+        source_table: string;
+        target_schema: string;
+        target_table: string;
+      }>(`
+        SELECT
+          sn.nspname AS source_schema,
+          sc.relname AS source_table,
+          tn.nspname AS target_schema,
+          tc.relname AS target_table
+        FROM pg_constraint con
+        JOIN pg_class sc ON sc.oid = con.conrelid
+        JOIN pg_namespace sn ON sn.oid = sc.relnamespace
+        JOIN pg_class tc ON tc.oid = con.confrelid
+        JOIN pg_namespace tn ON tn.oid = tc.relnamespace
+        WHERE con.contype = 'f'
+          AND sn.nspname NOT IN ('pg_catalog', 'information_schema')
+          AND sn.nspname NOT LIKE 'pg_toast%'
+          AND tn.nspname NOT IN ('pg_catalog', 'information_schema')
+          AND tn.nspname NOT LIKE 'pg_toast%'
+      `),
     ]);
 
     const columnsByTable = new Map<string, PostgresColumn[]>();
@@ -775,6 +797,19 @@ export async function fetchSchemaCatalog(): Promise<{
       pkByTable.set(key, list);
     }
 
+    const connectionsByTable = new Map<string, number>();
+    for (const fk of fkRes.rows) {
+      const srcKey = `${fk.source_schema}.${fk.source_table}`;
+      const tgtKey = `${fk.target_schema}.${fk.target_table}`;
+      connectionsByTable.set(srcKey, (connectionsByTable.get(srcKey) ?? 0) + 1);
+      if (tgtKey !== srcKey) {
+        connectionsByTable.set(
+          tgtKey,
+          (connectionsByTable.get(tgtKey) ?? 0) + 1
+        );
+      }
+    }
+
     const exactCounts = await resolveExactTableCounts(
       pool,
       tablesRes.rows.map((tbl) => ({
@@ -791,6 +826,7 @@ export async function fetchSchemaCatalog(): Promise<{
         schema: tbl.schema_name,
         name: tbl.table_name,
         rowEstimate: exactCounts.get(key) ?? (Number(tbl.row_estimate) || 0),
+        connectionCount: connectionsByTable.get(key) ?? 0,
         primaryKeyColumns: pkByTable.get(key) ?? [],
         columns: columnsByTable.get(key) ?? [],
       };

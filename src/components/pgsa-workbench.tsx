@@ -302,6 +302,11 @@ export function PgsaWorkbench({
     [catalog]
   );
 
+  const totalCatalogConnections = useMemo(
+    () => catalog.reduce((acc, tbl) => acc + (tbl.connectionCount ?? 0), 0),
+    [catalog]
+  );
+
   const handlePingHealth = useCallback(async (notifyOnDone = false) => {
     setHealth((prev) => ({ ...prev, status: "checking", error: undefined }));
     try {
@@ -895,7 +900,11 @@ export function PgsaWorkbench({
                                       : fullName}
                                   </span>
                                   <span className="shrink-0 text-xs text-zinc-600 tabular-nums">
-                                    {table.rowEstimate.toLocaleString()}
+                                    {activeView === "visualizer"
+                                      ? (
+                                          table.connectionCount ?? 0
+                                        ).toLocaleString()
+                                      : table.rowEstimate.toLocaleString()}
                                   </span>
                                 </ContextMenuTrigger>
 
@@ -977,7 +986,11 @@ export function PgsaWorkbench({
                           {catalog.length}{" "}
                           {catalog.length === 1 ? "table" : "tables"}
                         </span>
-                        <span>{totalCatalogRows.toLocaleString()} rows</span>
+                        <span>
+                          {activeView === "visualizer"
+                            ? `${totalCatalogConnections.toLocaleString()} connections`
+                            : `${totalCatalogRows.toLocaleString()} rows`}
+                        </span>
                       </div>
                     </div>
                   </motion.aside>

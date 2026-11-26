@@ -58,6 +58,7 @@ export interface TableSchema {
   schema: string;
   name: string;
   rowEstimate: number;
+  connectionCount?: number;
   primaryKeyColumns: string[];
   columns: PostgresColumn[];
 }

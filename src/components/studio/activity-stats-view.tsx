@@ -63,6 +63,7 @@ import type {
 } from "@/types/postgres";
 
 export interface ActivityStatsViewProps {
+  focusedTableKey?: string | null;
   onOpenTable?: (schema: string, table: string) => void;
 }
 
@@ -120,7 +121,10 @@ function formatTimestamp(iso: string | null): string {
  * Live PostgreSQL server telemetry view exposing `pg_stat_activity`,
  * `pg_stat_user_tables` storage/index breakdowns, and `pg_roles`/`pg_extension`.
  */
-export function ActivityStatsView({ onOpenTable }: ActivityStatsViewProps) {
+export function ActivityStatsView({
+  focusedTableKey = null,
+  onOpenTable,
+}: ActivityStatsViewProps) {
   const [activeTab, setActiveTab] = useState<StatsSubTab>("connections");
   const [payload, setPayload] = useState<ActivityAndStatsPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,6 +132,16 @@ export function ActivityStatsView({ onOpenTable }: ActivityStatsViewProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [lastUpdatedLabel, setLastUpdatedLabel] = useState<string | null>(null);
   const [filterText, setFilterText] = useState("");
+  const [prevFocusedTableKey, setPrevFocusedTableKey] = useState<string | null>(
+    focusedTableKey
+  );
+  if (focusedTableKey !== prevFocusedTableKey) {
+    setPrevFocusedTableKey(focusedTableKey);
+    if (focusedTableKey) {
+      setActiveTab("storage");
+      setFilterText(focusedTableKey.split(".").pop() ?? focusedTableKey);
+    }
+  }
 
   // Modal state
   const [inspectedProcess, setInspectedProcess] =

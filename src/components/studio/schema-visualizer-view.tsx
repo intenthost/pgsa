@@ -55,6 +55,7 @@ import type {
 
 export interface SchemaVisualizerViewProps {
   initialGraph?: SchemaGraphResult | null;
+  focusedTableKey?: string | null;
   onOpenTable: (schema: string, table: string) => void;
 }
 
@@ -535,6 +536,7 @@ function buildEdgeGeometry(
 
 export function SchemaVisualizerView({
   initialGraph,
+  focusedTableKey = null,
   onOpenTable,
 }: SchemaVisualizerViewProps) {
   const [graphResult, setGraphResult] = useState<SchemaGraphResult | null>(
@@ -562,7 +564,18 @@ export function SchemaVisualizerView({
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const [draggingTableKey, setDraggingTableKey] = useState<string | null>(null);
 
-  const [selectedTableKey, setSelectedTableKey] = useState<string | null>(null);
+  const [selectedTableKey, setSelectedTableKey] = useState<string | null>(
+    focusedTableKey
+  );
+  const [prevFocusedTableKey, setPrevFocusedTableKey] = useState<string | null>(
+    focusedTableKey
+  );
+  if (focusedTableKey !== prevFocusedTableKey) {
+    setPrevFocusedTableKey(focusedTableKey);
+    if (focusedTableKey) {
+      setSelectedTableKey(focusedTableKey);
+    }
+  }
   const [hoveredTableKey, setHoveredTableKey] = useState<string | null>(null);
   const [selectedEdgeKey, setSelectedEdgeKey] = useState<string | null>(null);
   const [hoveredEdgeKey, setHoveredEdgeKey] = useState<string | null>(null);

@@ -18,7 +18,6 @@ import {
   Cancel01Icon,
   CommandIcon,
   Copy01Icon,
-  Database02Icon,
   DatabaseExportIcon,
   GridTableIcon,
   HierarchyIcon,
@@ -264,6 +263,9 @@ export function PgsaWorkbench({
         ? buildQualifiedSelectSql(firstTable.schema, firstTable.name)
         : "SELECT version(), current_database(), current_user;")
   );
+  const [sidebarFocusedTableKey, setSidebarFocusedTableKey] = useState<
+    string | null
+  >(null);
 
   const [schemaInspector, setSchemaInspector] =
     useState<SchemaInspectorState | null>(null);
@@ -412,6 +414,31 @@ export function PgsaWorkbench({
     [browseParams.pageSize, fetchTablePage]
   );
 
+  const handleSidebarTableClick = useCallback(
+    (schema: string, table: string) => {
+      if (activeView === "tables") {
+        handleSelectTable(schema, table);
+        return;
+      }
+
+      setBrowseParams((prev) => ({
+        ...prev,
+        schema,
+        table,
+        page: 1,
+        sort: null,
+        search: "",
+      }));
+      const fullKey = `${schema}.${table}`;
+      setSidebarFocusedTableKey(fullKey);
+
+      if (activeView === "sql") {
+        setSqlConsoleDraft(buildQualifiedSelectSql(schema, table));
+      }
+    },
+    [activeView, handleSelectTable]
+  );
+
   const handleRefreshTable = useCallback(() => {
     if (browseParams.schema && browseParams.table) {
       fetchTablePage(browseParams);
@@ -479,7 +506,6 @@ export function PgsaWorkbench({
   }, []);
 
   const activeDbName = connectionMeta.database ?? "PostgreSQL";
-  const activeDbUser = connectionMeta.dbUser ?? connectionMeta.sessionUser;
 
   const statusDotClass = cn(
     "size-1.5 shrink-0 rounded-full",
@@ -494,9 +520,9 @@ export function PgsaWorkbench({
       <div className="flex h-dvh w-full flex-col overflow-hidden bg-background font-sans text-foreground">
         {/* Single 44px Edge-to-Edge Studio Header */}
         <header className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-border bg-background px-3">
-          {/* Left: Sidebar Toggle (Tables View) + Brand + Active DB */}
-          <div className="flex min-w-0 items-center gap-2">
-            {activeView === "tables" && (
+          {/* Left: Sidebar Toggle + Brand + 5-View Studio Navigation Tabs */}
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="flex items-center gap-2">
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -519,67 +545,40 @@ export function PgsaWorkbench({
                   {isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
                 </TooltipContent>
               </Tooltip>
-            )}
 
-            <div className="flex items-center gap-2">
-              <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-zinc-900 text-white">
-                <HugeiconsIcon
-                  icon={Database02Icon}
-                  size={13}
-                  strokeWidth={2}
-                />
-              </span>
               <span className="text-sm font-semibold tracking-tight text-foreground">
                 PGSA
               </span>
             </div>
 
-            <span
-              aria-hidden="true"
-              className="hidden text-sm text-zinc-500 select-none sm:inline"
+            <Tabs
+              value={activeView}
+              onValueChange={(value) => setActiveView(value as StudioView)}
             >
-              /
-            </span>
-
-            <div className="hidden min-w-0 items-center gap-1.5 text-xs sm:flex">
-              <span className={statusDotClass} />
-              <span className="max-w-36 truncate font-medium text-foreground">
-                {activeDbName}
-              </span>
-              <span className="hidden truncate text-zinc-600 lg:inline">
-                ({activeDbUser})
-              </span>
-            </div>
+              <TabsList variant="line">
+                <TabsTrigger value="tables">
+                  <HugeiconsIcon icon={Table01Icon} strokeWidth={1.8} />
+                  <span>Tables</span>
+                </TabsTrigger>
+                <TabsTrigger value="sql">
+                  <HugeiconsIcon icon={SqlIcon} strokeWidth={1.8} />
+                  <span>SQL</span>
+                </TabsTrigger>
+                <TabsTrigger value="visualizer">
+                  <HugeiconsIcon icon={HierarchyIcon} strokeWidth={1.8} />
+                  <span>Visualizer</span>
+                </TabsTrigger>
+                <TabsTrigger value="backup">
+                  <HugeiconsIcon icon={DatabaseExportIcon} strokeWidth={1.8} />
+                  <span>Backup</span>
+                </TabsTrigger>
+                <TabsTrigger value="activity">
+                  <HugeiconsIcon icon={Activity01Icon} strokeWidth={1.8} />
+                  <span>Activity</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
-
-          {/* Center: 5-View Studio Navigation Tabs */}
-          <Tabs
-            value={activeView}
-            onValueChange={(value) => setActiveView(value as StudioView)}
-          >
-            <TabsList variant="line">
-              <TabsTrigger value="tables">
-                <HugeiconsIcon icon={Table01Icon} strokeWidth={1.8} />
-                <span>Tables</span>
-              </TabsTrigger>
-              <TabsTrigger value="sql">
-                <HugeiconsIcon icon={SqlIcon} strokeWidth={1.8} />
-                <span>SQL</span>
-              </TabsTrigger>
-              <TabsTrigger value="visualizer">
-                <HugeiconsIcon icon={HierarchyIcon} strokeWidth={1.8} />
-                <span>Visualizer</span>
-              </TabsTrigger>
-              <TabsTrigger value="backup">
-                <HugeiconsIcon icon={DatabaseExportIcon} strokeWidth={1.8} />
-                <span>Backup</span>
-              </TabsTrigger>
-              <TabsTrigger value="activity">
-                <HugeiconsIcon icon={Activity01Icon} strokeWidth={1.8} />
-                <span>Activity</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
 
           {/* Right: ⌘K Quick Jump + Health Popover + User Menu */}
           <div className="flex shrink-0 items-center gap-1.5">
@@ -801,18 +800,16 @@ export function PgsaWorkbench({
 
         {/* Active Studio View */}
         <main className="flex min-h-0 flex-1 overflow-hidden">
-          {activeView === "tables" && (
-            <div className="flex min-h-0 flex-1 overflow-hidden">
-              <AnimatePresence initial={false}>
-                {isSidebarOpen && (
-                  <motion.aside
-                    key="tables-rail"
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 272, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                    className="h-full shrink-0 overflow-hidden border-r border-border bg-[#fafafa]"
-                  >
+          <AnimatePresence initial={false}>
+            {isSidebarOpen && (
+              <motion.aside
+                key="tables-rail"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 272, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                className="h-full shrink-0 overflow-hidden border-r border-border bg-[#fafafa]"
+              >
                     <div className="flex h-full w-[272px] flex-col">
                       <div className="border-b border-border p-2.5">
                         <InputGroup className="h-8 bg-background">
@@ -867,7 +864,7 @@ export function PgsaWorkbench({
                                     <button
                                       type="button"
                                       onClick={() =>
-                                        handleSelectTable(
+                                        handleSidebarTableClick(
                                           table.schema,
                                           table.name
                                         )
@@ -987,17 +984,17 @@ export function PgsaWorkbench({
                 )}
               </AnimatePresence>
 
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
-                <DataGridView
-                  activeTable={activeTable}
-                  result={tableResult}
-                  isLoading={isBrowsing}
-                  onRefresh={handleRefreshTable}
-                  onResultUpdated={handleResultUpdated}
-                  onOpenSqlTab={handleOpenSqlTab}
-                  serverPagination={serverPagination}
-                />
-              </div>
+          {activeView === "tables" && (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
+              <DataGridView
+                activeTable={activeTable}
+                result={tableResult}
+                isLoading={isBrowsing}
+                onRefresh={handleRefreshTable}
+                onResultUpdated={handleResultUpdated}
+                onOpenSqlTab={handleOpenSqlTab}
+                serverPagination={serverPagination}
+              />
             </div>
           )}
 
@@ -1016,6 +1013,7 @@ export function PgsaWorkbench({
           {activeView === "visualizer" && (
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <SchemaVisualizerView
+                focusedTableKey={sidebarFocusedTableKey}
                 onOpenTable={(schema, name) => handleSelectTable(schema, name)}
               />
             </div>
@@ -1025,6 +1023,7 @@ export function PgsaWorkbench({
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <BackupRestoreView
                 schemaCatalog={catalog}
+                focusedTableKey={sidebarFocusedTableKey}
                 onRestored={() => {
                   router.refresh();
                   if (browseParams.schema && browseParams.table) {
@@ -1038,6 +1037,7 @@ export function PgsaWorkbench({
           {activeView === "activity" && (
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <ActivityStatsView
+                focusedTableKey={sidebarFocusedTableKey}
                 onOpenTable={(schema, name) => handleSelectTable(schema, name)}
               />
             </div>

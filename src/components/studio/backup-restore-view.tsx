@@ -63,6 +63,7 @@ import type {
 
 export interface BackupRestoreViewProps {
   schemaCatalog: TableSchema[];
+  focusedTableKey?: string | null;
   onRestored?: () => void;
 }
 
@@ -120,6 +121,7 @@ function parseFilenameFromDisposition(
  */
 export function BackupRestoreView({
   schemaCatalog,
+  focusedTableKey = null,
   onRestored,
 }: BackupRestoreViewProps) {
   const [activeTab, setActiveTab] = useState<StudioMode>("backup");
@@ -129,6 +131,16 @@ export function BackupRestoreView({
   const [includeSchema, setIncludeSchema] = useState(true);
   const [includeData, setIncludeData] = useState(true);
   const [tableSearch, setTableSearch] = useState("");
+  const [prevFocusedTableKey, setPrevFocusedTableKey] = useState<string | null>(
+    focusedTableKey
+  );
+  if (focusedTableKey !== prevFocusedTableKey) {
+    setPrevFocusedTableKey(focusedTableKey);
+    if (focusedTableKey) {
+      setActiveTab("backup");
+      setTableSearch(focusedTableKey.split(".").pop() ?? focusedTableKey);
+    }
+  }
   const [deselectedTableKeys, setDeselectedTableKeys] = useState<Set<string>>(
     () => new Set()
   );

@@ -672,6 +672,11 @@ export function DataGridView({
 
   const [density, setDensity] = useState<GridDensity>("default");
   const [clientPageSize, setClientPageSize] = useState<number>(50);
+  const [virtualScroll, setVirtualScroll] = useState<{
+    scrollTop: number;
+    viewportHeight: number;
+  }>({ scrollTop: 0, viewportHeight: 720 });
+  const scrollRafRef = useRef<number | null>(null);
 
   const [scopedSort, setScopedSort] = useState<{
     scope: string;
@@ -924,6 +929,82 @@ export function DataGridView({
     showAllRows,
     sortedRows,
   ]);
+
+  const rowHeightPx = density === "dense" ? 36 : 44;
+  const shouldVirtualize = paginatedRows.length > 100;
+  const virtualOverscan = 12;
+  const virtualStartIndex = shouldVirtualize
+    ? Math.max(
+        0,
+        Math.floor(Math.max(0, virtualScroll.scrollTop - 40) / rowHeightPx) -
+          virtualOverscan
+      )
+    : 0;
+  const virtualEndIndex = shouldVirtualize
+    ? Math.min(
+        paginatedRows.length,
+        Math.ceil(
+          (virtualScroll.scrollTop + virtualScroll.viewportHeight) / rowHeightPx
+        ) + virtualOverscan
+      )
+    : paginatedRows.length;
+  const renderedRows = shouldVirtualize
+    ? paginatedRows.slice(virtualStartIndex, virtualEndIndex)
+    : paginatedRows;
+  const topSpacerHeight = virtualStartIndex * rowHeightPx;
+  const bottomSpacerHeight = Math.max(
+    0,
+    (paginatedRows.length - virtualEndIndex) * rowHeightPx
+  );
+
+  useEffect(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+
+    const syncHeight = () => {
+      const nextHeight = el.clientHeight || 720;
+      setVirtualScroll((prev) =>
+        prev.viewportHeight === nextHeight
+          ? prev
+          : { ...prev, viewportHeight: nextHeight }
+      );
+    };
+    syncHeight();
+
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(syncHeight);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+    };
+  }, []);
+
+  const handleGridScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      if (!shouldVirtualize) return;
+      const target = event.currentTarget;
+      const nextTop = target.scrollTop;
+      const nextHeight = target.clientHeight || 720;
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+      scrollRafRef.current = requestAnimationFrame(() => {
+        setVirtualScroll((prev) => {
+          if (
+            Math.abs(prev.scrollTop - nextTop) < rowHeightPx &&
+            prev.viewportHeight === nextHeight
+          ) {
+            return prev;
+          }
+          return { scrollTop: nextTop, viewportHeight: nextHeight };
+        });
+      });
+    },
+    [rowHeightPx, shouldVirtualize]
+  );
 
   const showingFrom =
     totalRowsCount === 0 || paginatedRows.length === 0
@@ -2158,20 +2239,28 @@ export function DataGridView({
         {/* Edge-to-Edge Spreadsheet Grid (ZERO motion inside table) */}
         <div
           ref={tableContainerRef}
+          onScroll={handleGridScroll}
           className="min-h-0 flex-1 overflow-auto bg-white"
         >
           {!result && isLoading ? (
             <div className="flex flex-col divide-y divide-zinc-100">
+              <div className="flex h-10 items-center gap-4 border-b border-zinc-200 bg-zinc-50 px-3">
+                <div className="size-3.5 rounded bg-zinc-200/80" />
+                <div className="h-3.5 w-8 rounded bg-zinc-200/80" />
+                <div className="h-3.5 w-32 rounded bg-zinc-200/80" />
+                <div className="h-3.5 w-44 rounded bg-zinc-200/80" />
+                <div className="h-3.5 w-28 rounded bg-zinc-200/80" />
+              </div>
               {Array.from({ length: 10 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="flex h-9 items-center gap-4 px-3"
+                  className="flex h-11 items-center gap-4 px-3"
                 >
                   <div className="size-3.5 rounded bg-zinc-100" />
-                  <div className="h-3 w-8 rounded bg-zinc-100" />
-                  <div className="h-3 w-36 rounded bg-zinc-100" />
-                  <div className="h-3 w-48 rounded bg-zinc-100" />
-                  <div className="h-3 w-28 rounded bg-zinc-100" />
+                  <div className="h-3.5 w-8 rounded bg-zinc-100" />
+                  <div className="h-3.5 w-32 rounded bg-zinc-100" />
+                  <div className="h-3.5 w-44 rounded bg-zinc-100" />
+                  <div className="h-3.5 w-28 rounded bg-zinc-100" />
                 </div>
               ))}
             </div>
@@ -2302,8 +2391,18 @@ export function DataGridView({
                     </td>
                   </tr>
                 ) : (
-                  paginatedRows.map((row, rowIndex) => {
-                    const isHashDesc =
+                  <>
+                    {topSpacerHeight > 0 && (
+                      <tr aria-hidden="true">
+                        <td
+                          colSpan={visibleColumns.length + 2}
+                          style={{ height: topSpacerHeight, padding: 0, border: 0 }}
+                        />
+                      </tr>
+                    )}
+                    {renderedRows.map((row, sliceOffset) => {
+                      const rowIndex = virtualStartIndex + sliceOffset;
+                      const isHashDesc =
                       sortState?.column === HASH_SORT_KEY &&
                       sortState.direction === "desc";
                     const globalRowNum = isHashDesc
@@ -2747,7 +2846,16 @@ export function DataGridView({
                         </ContextMenuContent>
                       </ContextMenu>
                     );
-                  })
+                  })}
+                    {bottomSpacerHeight > 0 && (
+                      <tr aria-hidden="true">
+                        <td
+                          colSpan={visibleColumns.length + 2}
+                          style={{ height: bottomSpacerHeight, padding: 0, border: 0 }}
+                        />
+                      </tr>
+                    )}
+                  </>
                 )}
               </tbody>
             </table>

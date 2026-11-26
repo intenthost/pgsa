@@ -63,24 +63,24 @@ function WorkbenchFallback() {
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
       <header className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-border bg-background px-3">
-        <div className="flex items-center gap-2.5">
-          <div className="size-7 animate-pulse rounded-md bg-muted" />
-          <span className="text-sm font-semibold tracking-tight text-foreground">
-            PGSA
-          </span>
-          <span className="text-sm text-zinc-300 select-none">/</span>
-          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="size-7 animate-pulse rounded-md bg-muted" />
+            <span className="text-sm font-semibold tracking-tight text-foreground">
+              PGSA
+            </span>
+          </div>
+
+          <div className="hidden items-center gap-3 sm:flex">
+            <div className="h-5 w-14 animate-pulse rounded bg-muted" />
+            <div className="h-5 w-12 animate-pulse rounded bg-muted" />
+            <div className="h-5 w-20 animate-pulse rounded bg-muted" />
+            <div className="h-5 w-14 animate-pulse rounded bg-muted" />
+            <div className="h-5 w-16 animate-pulse rounded bg-muted" />
+          </div>
         </div>
 
-        <div className="hidden items-center gap-3 sm:flex">
-          <div className="h-5 w-14 animate-pulse rounded bg-muted" />
-          <div className="h-5 w-12 animate-pulse rounded bg-muted" />
-          <div className="h-5 w-18 animate-pulse rounded bg-muted" />
-          <div className="h-5 w-14 animate-pulse rounded bg-muted" />
-          <div className="h-5 w-16 animate-pulse rounded bg-muted" />
-        </div>
-
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           <div className="h-7 w-24 animate-pulse rounded-md bg-muted" />
           <div className="h-7 w-16 animate-pulse rounded-md bg-muted" />
           <div className="h-7 w-20 animate-pulse rounded-md bg-muted" />
@@ -88,41 +88,73 @@ function WorkbenchFallback() {
       </header>
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-[#fafafa] md:flex">
-          <div className="border-b border-border p-2">
-            <div className="h-7 w-full animate-pulse rounded-md bg-zinc-200/70" />
+        <aside className="hidden w-[272px] shrink-0 flex-col border-r border-border bg-[#fafafa] md:flex">
+          <div className="border-b border-border p-2.5">
+            <div className="h-8 w-full animate-pulse rounded-md bg-zinc-200/70" />
           </div>
-          <div className="flex flex-1 flex-col gap-1.5 p-2">
-            <div className="h-7 animate-pulse rounded-md bg-zinc-200/60" />
-            <div className="h-7 animate-pulse rounded-md bg-zinc-200/50" />
-            <div className="h-7 animate-pulse rounded-md bg-zinc-200/50" />
-            <div className="h-7 animate-pulse rounded-md bg-zinc-200/40" />
+          <div className="flex flex-1 flex-col gap-1 p-1.5">
+            {Array.from({ length: 12 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="flex h-9 items-center justify-between gap-2.5 rounded-md px-2.5"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="size-3.5 animate-pulse rounded bg-zinc-200/70" />
+                  <div className="h-3.5 w-28 animate-pulse rounded bg-zinc-200/70" />
+                </div>
+                <div className="h-3 w-7 animate-pulse rounded bg-zinc-200/60" />
+              </div>
+            ))}
+          </div>
+          <div className="flex h-10 shrink-0 items-center justify-between border-t border-border px-3">
+            <div className="h-3 w-14 animate-pulse rounded bg-zinc-200/70" />
+            <div className="h-3 w-16 animate-pulse rounded bg-zinc-200/60" />
           </div>
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
-          <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-3">
-            <div className="h-4 w-44 animate-pulse rounded bg-muted" />
+          <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3.5">
+            <div className="flex items-center gap-2.5">
+              <div className="h-4 w-36 animate-pulse rounded bg-muted" />
+              <div className="h-3.5 w-24 animate-pulse rounded bg-muted/80" />
+              <div className="h-8 w-56 animate-pulse rounded-md bg-muted" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-8 w-16 animate-pulse rounded-md bg-muted" />
+              <div className="h-8 w-16 animate-pulse rounded-md bg-muted" />
+              <div className="h-8 w-8 animate-pulse rounded-md bg-muted" />
+              <div className="h-8 w-20 animate-pulse rounded-md bg-muted" />
+            </div>
+          </div>
+
+          <div className="flex h-10 shrink-0 items-center gap-4 border-b border-zinc-200 bg-zinc-50 px-3">
+            <div className="size-3.5 animate-pulse rounded bg-zinc-200/80" />
+            <div className="h-3.5 w-8 animate-pulse rounded bg-zinc-200/80" />
+            <div className="h-3.5 w-28 animate-pulse rounded bg-zinc-200/80" />
+            <div className="h-3.5 w-36 animate-pulse rounded bg-zinc-200/80" />
+            <div className="h-3.5 w-28 animate-pulse rounded bg-zinc-200/80" />
+            <div className="h-3.5 w-32 animate-pulse rounded bg-zinc-200/80" />
+          </div>
+
+          <div className="flex flex-1 flex-col divide-y divide-zinc-100 overflow-hidden bg-white">
+            {Array.from({ length: 12 }).map((_, idx) => (
+              <div key={idx} className="flex h-11 shrink-0 items-center gap-4 px-3">
+                <div className="size-3.5 animate-pulse rounded bg-zinc-100" />
+                <div className="h-3.5 w-8 animate-pulse rounded bg-zinc-100" />
+                <div className="h-3.5 w-28 animate-pulse rounded bg-zinc-100" />
+                <div className="h-3.5 w-36 animate-pulse rounded bg-zinc-100" />
+                <div className="h-3.5 w-28 animate-pulse rounded bg-zinc-100" />
+                <div className="h-3.5 w-32 animate-pulse rounded bg-zinc-100" />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex h-10 shrink-0 items-center justify-between border-t border-zinc-200 bg-white px-3.5">
+            <div className="h-3.5 w-32 animate-pulse rounded bg-muted" />
             <div className="flex items-center gap-2">
-              <div className="h-7 w-40 animate-pulse rounded-md bg-muted" />
               <div className="h-7 w-16 animate-pulse rounded-md bg-muted" />
-              <div className="h-7 w-16 animate-pulse rounded-md bg-muted" />
+              <div className="h-7 w-28 animate-pulse rounded-md bg-muted" />
             </div>
-          </div>
-
-          <div className="flex flex-1 flex-col gap-2 p-3">
-            <div className="h-8 animate-pulse rounded bg-muted/80" />
-            <div className="h-8 animate-pulse rounded bg-muted/50" />
-            <div className="h-8 animate-pulse rounded bg-muted/50" />
-            <div className="h-8 animate-pulse rounded bg-muted/40" />
-            <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-              Loading PostgreSQL workspace…
-            </div>
-          </div>
-
-          <div className="flex h-9 shrink-0 items-center justify-between border-t border-border bg-[#fafafa] px-3">
-            <div className="h-3.5 w-32 animate-pulse rounded bg-zinc-200/70" />
-            <div className="h-5 w-44 animate-pulse rounded bg-zinc-200/70" />
           </div>
         </main>
       </div>
